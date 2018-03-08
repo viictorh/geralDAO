@@ -1,0 +1,8 @@
+example
+
+
+        BaseService baseService = new BaseService(service.getEm());
+        QueryPredicate q = new QueryPredicate("id", 1).and("id", Operator.NOT_EQUAL, "0").or("name", Operator.CONTAINS, "security");
+
+        boolean entityExists = baseService.entityExists(Role.class, q);
+        System.out.println(entityExists);
