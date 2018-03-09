@@ -1,5 +1,6 @@
 package br.com.geraldao.dao;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,10 +26,33 @@ import br.com.geraldao.constant.QueryOrder;
 import br.com.geraldao.entity.BaseEntity;
 import br.com.geraldao.predicate.PredicateClause;
 
-public abstract class BaseService {
+/**
+ * Generic JPA Service
+ * 
+ * @author victor.bello
+ *
+ */
+public abstract class BaseService extends ProceduresService {
     private final static Logger LOGGER = Logger.getLogger(BaseService.class);
 
     abstract protected EntityManager getEm();
+
+    /**
+     * Returns a JDBC Connection unwraping from entityManager the {@code Connection.class}. If vendor doesn't support this unwrap, a {@code RuntimeException} will be thrown. If connection acquired is null, a {@code NullPointerException} will be thrown.
+     */
+    @Override
+    protected Connection connection() {
+        String connectionUnwrapError = "Unable to get connection from entityManager. BaseService connection() method must be overrided and implemented according to JPA plataform vendor";
+        try {
+            Connection connection = getEm().unwrap(Connection.class);
+            if (connection == null) {
+                throw new NullPointerException(connectionUnwrapError);
+            }
+            return connection;
+        } catch (Exception e) {
+            throw new RuntimeException(connectionUnwrapError + System.lineSeparator() + e.getMessage());
+        }
+    }
 
     public <T> boolean entityExists(Class<T> entity, PredicateClause predicateClause) {
         CriteriaBuilder cb = getEm().getCriteriaBuilder();
@@ -54,10 +78,6 @@ public abstract class BaseService {
         }
     }
 
-    public <T extends BaseEntity> void remove(T entity) {
-        getEm().remove(entity);
-    }
-
     public <T extends BaseEntity> void saveBatch(Collection<T> items) {
         for (Iterator<T> iterator = items.iterator(); iterator.hasNext();) {
             T t = (T) iterator.next();
@@ -69,40 +89,13 @@ public abstract class BaseService {
         }
     }
 
-    public <T extends BaseEntity> T findById(Class<T> entityClass, Object id) {
-        return getEm().find(entityClass, id);
+    public <T extends BaseEntity> void remove(T entity) {
+        getEm().remove(entity);
     }
 
-    public <T extends BaseEntity> T findFirstOrderedByParams(Class<T> entityClass, PredicateClause predicateClause, QueryOrder order, String... columns) {
-        CriteriaQuery<T> cq = generateSelectQuery(entityClass, predicateClause, order, columns);
-        List<T> resultList = getEm().createQuery(cq).setFirstResult(0).setMaxResults(1).getResultList();
-        return resultList == null ? null : resultList.get(0);
-    }
-
-    public <T extends BaseEntity> T findFirstByParams(Class<T> entityClass, PredicateClause predicateClause) {
-        return findFirstOrderedByParams(entityClass, predicateClause, null);
-    }
-
-    public <T extends BaseEntity> T findFirstOrdered(Class<T> entityClass, QueryOrder order, String... columns) {
-        return findFirstOrderedByParams(entityClass, null, order, columns);
-    }
-
-    public <T extends BaseEntity> List<T> findAll(Class<T> entityClass) {
-        return findAllOrderedByParams(entityClass, null, null);
-    }
-
-    public <T extends BaseEntity> List<T> findAllOrderedByParams(Class<T> entityClass, PredicateClause predicateClause, QueryOrder order, String... columns) {
-        CriteriaQuery<T> cq = generateSelectQuery(entityClass, predicateClause, order, columns);
-        List<T> resultList = getEm().createQuery(cq).getResultList();
-        return resultList == null ? Collections.emptyList() : resultList;
-    }
-
-    public <T extends BaseEntity> List<T> findAllByParams(Class<T> entityClass, PredicateClause predicateClause) {
-        return findAllOrderedByParams(entityClass, predicateClause, null);
-    }
-
-    public <T extends BaseEntity> List<T> findAllOrdered(Class<T> entityClass, QueryOrder order, String... columns) {
-        return findAllOrderedByParams(entityClass, null, order, columns);
+    public <T extends BaseEntity> void remove(T entity, Object pk) {
+        BaseEntity ref = getEm().getReference(entity.getClass(), pk);
+        getEm().remove(ref);
     }
 
     /**
@@ -170,9 +163,43 @@ public abstract class BaseService {
         return false;
     }
 
-    public <T extends BaseEntity> void remove(T entity, Object pk) {
-        BaseEntity ref = getEm().getReference(entity.getClass(), pk);
-        getEm().remove(ref);
+    // ***************************************************************************
+    // ----------------------------- SEARCH QUERIES ----------------------------- //
+    // ***************************************************************************
+    public <T extends BaseEntity> T findById(Class<T> entityClass, Object id) {
+        return getEm().find(entityClass, id);
+    }
+
+    public <T extends BaseEntity> T findFirstOrderedByParams(Class<T> entityClass, PredicateClause predicateClause, QueryOrder order, String... columns) {
+        CriteriaQuery<T> cq = generateSelectQuery(entityClass, predicateClause, order, columns);
+        List<T> resultList = getEm().createQuery(cq).setFirstResult(0).setMaxResults(1).getResultList();
+        return resultList == null ? null : resultList.get(0);
+    }
+
+    public <T extends BaseEntity> T findFirstByParams(Class<T> entityClass, PredicateClause predicateClause) {
+        return findFirstOrderedByParams(entityClass, predicateClause, null);
+    }
+
+    public <T extends BaseEntity> T findFirstOrdered(Class<T> entityClass, QueryOrder order, String... columns) {
+        return findFirstOrderedByParams(entityClass, null, order, columns);
+    }
+
+    public <T extends BaseEntity> List<T> findAll(Class<T> entityClass) {
+        return findAllOrderedByParams(entityClass, null, null);
+    }
+
+    public <T extends BaseEntity> List<T> findAllOrderedByParams(Class<T> entityClass, PredicateClause predicateClause, QueryOrder order, String... columns) {
+        CriteriaQuery<T> cq = generateSelectQuery(entityClass, predicateClause, order, columns);
+        List<T> resultList = getEm().createQuery(cq).getResultList();
+        return resultList == null ? Collections.emptyList() : resultList;
+    }
+
+    public <T extends BaseEntity> List<T> findAllByParams(Class<T> entityClass, PredicateClause predicateClause) {
+        return findAllOrderedByParams(entityClass, predicateClause, null);
+    }
+
+    public <T extends BaseEntity> List<T> findAllOrdered(Class<T> entityClass, QueryOrder order, String... columns) {
+        return findAllOrderedByParams(entityClass, null, order, columns);
     }
 
     public boolean isLoaded(BaseEntity entity) {

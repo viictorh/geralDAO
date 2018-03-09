@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.persistence.Entity;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
@@ -13,9 +14,27 @@ import br.com.geraldao.util.ListUtil;
 
 import javax.persistence.criteria.Root;
 
+/**
+ * 
+ * @author victor.bello
+ *
+ */
 public class PredicateClause extends ConditionCombiner {
     private List<ConditionCombiner> queries = new ArrayList<ConditionCombiner>();
 
+    PredicateClause() {
+    }
+
+    /**
+     * Generate JPA {@link Predicate} according to builded {@link PredicateClause}
+     * 
+     * @param root
+     *            - Object entity mapped with {@link Entity} annotation
+     * @param cb
+     *            - CriteriaBuilder
+     * @return List of JPA predicates
+     * @see PredicateBuilder
+     */
     public <T> List<Predicate> generator(Root<T> root, CriteriaBuilder cb) {
         return readPredicates(root, cb, queries);
     }
