@@ -22,6 +22,9 @@ import javax.persistence.criteria.Root;
 public class PredicateClause extends ConditionCombiner {
     private List<ConditionCombiner> queries = new ArrayList<ConditionCombiner>();
 
+    PredicateClause() {
+    }
+
     /**
      * Generate JPA {@link Predicate} according to builded {@link PredicateClause}
      * 
