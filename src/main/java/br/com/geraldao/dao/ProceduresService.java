@@ -31,22 +31,12 @@ public abstract class ProceduresService {
     public ProceduresService() {
     }
 
-    protected abstract Connection connection();
-
     /**
-     * Retorna o primeiro objeto a partir da execução da procedure
+     * Create an open connection with database. This connection will be closed after used.
      * 
-     * @param procedure
-     *            - Procedure que será executada sem parametros
-     * @param clazz
-     *            - Classe da qual o objeto será criado
-     * @return - Retorno do objeto a partir da classe solicitada
-     * @throws SQLException
-     * @author victor.bello
+     * @return JDBC Connection
      */
-    public <T> T firstResultFromProcedure(final String procedure, final Class<T> clazz) throws SQLException {
-        return firstResultFromProcedure(procedure, null, clazz);
-    }
+    protected abstract Connection connection();
 
     /**
      * Executa procedure sem leitura do retorno
@@ -59,7 +49,7 @@ public abstract class ProceduresService {
      * @author victor.bello
      */
     public void executeProcedure(final String procedure, final List<?> params) throws SQLException {
-        firstResultFromProcedure(procedure, params, null);
+        findByProcedure(procedure, params, null);
     }
 
     /**
@@ -71,7 +61,22 @@ public abstract class ProceduresService {
      * @author victor.bello
      */
     public void executeProcedure(final String procedure) throws SQLException {
-        firstResultFromProcedure(procedure, null, null);
+        findByProcedure(procedure, null, null);
+    }
+
+    /**
+     * Retorna o primeiro objeto a partir da execução da procedure
+     * 
+     * @param procedure
+     *            - Procedure que será executada sem parametros
+     * @param clazz
+     *            - Classe da qual o objeto será criado
+     * @return - Retorno do objeto a partir da classe solicitada
+     * @throws SQLException
+     * @author victor.bello
+     */
+    public <T> T findByProcedure(final String procedure, final Class<T> clazz) throws SQLException {
+        return findByProcedure(procedure, null, clazz);
     }
 
     /**
@@ -87,7 +92,7 @@ public abstract class ProceduresService {
      * @throws SQLException
      * @author victor.bello
      */
-    public <T> T firstResultFromProcedure(final String procedure, final List<?> params, final Class<T> clazz) throws SQLException {
+    public <T> T findByProcedure(final String procedure, final List<?> params, final Class<T> clazz) throws SQLException {
         logger.debug("Procedure: " + procedure);
         logger.debug("Param: " + params);
         Result<T> resultReturn = execute(procedure, params, clazz, ResultType.ITEM);
@@ -106,7 +111,7 @@ public abstract class ProceduresService {
      * @return ResultSet with the return of the database
      * @throws SQLException
      */
-    public <T> List<T> getListFromProcedureResult(final String procedure, final List<?> params, final Class<T> clazz) throws SQLException {
+    public <T> List<T> findAllByProcedure(final String procedure, final List<?> params, final Class<T> clazz) throws SQLException {
         logger.debug("Procedure: " + procedure);
         logger.debug("Param: " + params);
         Result<T> resultReturn = execute(procedure, params, clazz, ResultType.LIST);

@@ -69,9 +69,9 @@ public class PredicateBuilder {
      * @return @return {@link PredicateBuilder}
      */
     public static PredicateBuilder where(String fieldName, Operator operator, Object fieldValue) {
-        PredicateClause qp = new PredicateClause();
-        qp.getQueries().add(new Condition(fieldName, operator, fieldValue));
-        return new PredicateBuilder(qp);
+        PredicateClause predicateClause = new PredicateClause();
+        predicateClause.getQueries().add(new Condition(fieldName, operator, fieldValue));
+        return new PredicateBuilder(predicateClause);
     }
 
     /**
