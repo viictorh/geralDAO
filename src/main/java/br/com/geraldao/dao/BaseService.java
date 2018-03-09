@@ -25,6 +25,11 @@ import br.com.geraldao.constant.QueryOrder;
 import br.com.geraldao.entity.BaseEntity;
 import br.com.geraldao.predicate.PredicateClause;
 
+/**
+ * 
+ * @author victor.bello
+ *
+ */
 public abstract class BaseService {
     private final static Logger LOGGER = Logger.getLogger(BaseService.class);
 
