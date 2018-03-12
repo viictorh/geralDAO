@@ -32,7 +32,7 @@ import br.com.geraldao.predicate.PredicateClause;
  * @author victor.bello
  *
  */
-public abstract class BaseService extends ProceduresService {
+public abstract class BaseService extends QueryService {
     private final static Logger LOGGER = Logger.getLogger(BaseService.class);
 
     abstract protected EntityManager getEm();

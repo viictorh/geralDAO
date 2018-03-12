@@ -2,6 +2,11 @@ package br.com.geraldao.predicate;
 
 import javax.persistence.criteria.Predicate.BooleanOperator;
 
+/**
+ * 
+ * @author victor.bello
+ *
+ */
 abstract class ConditionCombiner {
 
     private BooleanOperator operatorCombiner;
