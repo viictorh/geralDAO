@@ -4,6 +4,11 @@ import java.io.Serializable;
 
 import javax.persistence.MappedSuperclass;
 
+/**
+ * 
+ * @author victor.bello
+ *
+ */
 @MappedSuperclass
 public abstract class BaseEntity implements Serializable {
 

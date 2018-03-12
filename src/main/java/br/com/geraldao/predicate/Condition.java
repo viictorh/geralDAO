@@ -2,6 +2,11 @@ package br.com.geraldao.predicate;
 
 import br.com.geraldao.constant.Operator;
 
+/**
+ * 
+ * @author victor.bello
+ *
+ */
 class Condition extends ConditionCombiner {
     private Operator operator;
     private String   fieldName;
