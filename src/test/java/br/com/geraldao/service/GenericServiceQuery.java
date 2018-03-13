@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 import br.com.geraldao.dao.QueryService;
 
-public class GenericService extends QueryService {
+public class GenericServiceQuery extends QueryService {
     private static final String URL = "jdbc:sqlserver://svox-testew2k12;DatabaseName=Voscenter_Migracao_Banrisul_5_3;user=sa;password=S@voxsql";
 
     @Override

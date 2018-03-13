@@ -9,12 +9,12 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Predicate.BooleanOperator;
+import javax.persistence.criteria.Root;
 
 import br.com.geraldao.util.ListUtil;
 
-import javax.persistence.criteria.Root;
-
 /**
+ * Class responsible for generating JPA Predicates according to {@link PredicateBuilder}
  * 
  * @author victor.bello
  *

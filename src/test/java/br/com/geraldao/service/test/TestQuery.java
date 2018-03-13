@@ -17,46 +17,36 @@ import br.com.geraldao.bean.ProcedureDefaultResult;
 import br.com.geraldao.query.ProcedureBuilder;
 import br.com.geraldao.query.QueryBuilder;
 import br.com.geraldao.query.QueryResultReader;
-import br.com.geraldao.service.GenericService;
+import br.com.geraldao.service.GenericServiceQuery;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestQuery {
 
-    private GenericService service;
+    private GenericServiceQuery service;
 
     @Before
     public void setUp() {
-        service = new GenericService();
+        service = new GenericServiceQuery();
     }
 
     @Test
-    public void testAProcedureWithResult() throws SQLException {
-        List<Object> params = new ArrayList<>();
-        params.add(31);
-        params.add(true);
-        params.add(true);
+    public void testProcedureWithResult() throws SQLException {
+        List<Object> params = Arrays.asList(31, true, true);
         ProcedureDefaultResult findItem = service.findItem(ProcedureBuilder.create("Sp_UnPbxCleanUserConnection", params), ProcedureDefaultResult.class);
         System.out.println(findItem);
     }
 
     @Test
     public void testBProcedureSpecificResultPosition() throws SQLException {
-        List<Object> params = new ArrayList<>();
-        params.add(31);
-        params.add(true);
-        params.add(true);
+        List<Object> params = Arrays.asList(31, true, true);
         QueryResultReader<String> queryResult = new QueryResultReader<>(String.class, 1);
         String findItem = service.findItem(ProcedureBuilder.create("Sp_UnPbxCleanUserConnection", params), queryResult);
-        assertTrue(findItem.equals("2"));
         System.out.println(findItem);
     }
 
     @Test
     public void testCProcedureSpecificResultName() throws SQLException {
-        List<Object> params = new ArrayList<>();
-        params.add(31);
-        params.add(true);
-        params.add(true);
+        List<Object> params = Arrays.asList(31, true, true);
         QueryResultReader<String> queryResult = new QueryResultReader<>(String.class, "resultDescription");
         String findItem = service.findItem(ProcedureBuilder.create("Sp_UnPbxCleanUserConnection", params), queryResult);
         System.out.println(findItem);

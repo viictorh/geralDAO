@@ -23,7 +23,7 @@ class QueryExecutor<T> {
     private StatementBuilder     queryBuilder;
     private QueryResultReader<T> queryResultReader;
 
-    enum ResultType {
+    protected enum ResultType {
         NONE,
         LIST,
         ITEM;
