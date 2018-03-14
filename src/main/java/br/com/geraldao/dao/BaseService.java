@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceUnitUtil;
@@ -50,7 +51,8 @@ public abstract class BaseService extends QueryService {
     protected Connection connection() {
         String connectionUnwrapError = "Unable to get connection from entityManager. BaseService connection() method must be overrided and implemented according to JPA plataform vendor";
         try {
-            Connection connection = getEm().unwrap(Connection.class);
+            EntityManager em = getEm();
+            Connection connection = em.unwrap(Connection.class);
             if (connection == null) {
                 throw new NullPointerException(connectionUnwrapError);
             }
@@ -72,7 +74,8 @@ public abstract class BaseService extends QueryService {
      * @see PredicateBuilder
      */
     public <T> boolean entityExists(Class<T> entity, PredicateClause predicateClause) {
-        CriteriaBuilder cb = getEm().getCriteriaBuilder();
+        EntityManager em = getEm();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Long> cq = cb.createQuery(Long.class);
         Root<T> root = cq.from(entity);
         cq.select(cb.count(root));
@@ -82,7 +85,7 @@ public abstract class BaseService extends QueryService {
             Predicate[] conditions = predicates.toArray(new Predicate[predicates.size()]);
             cq.where(conditions);
         }
-        Long resultList = getEm().createQuery(cq).getSingleResult();
+        Long resultList = em.createQuery(cq).getSingleResult();
         return resultList > 0;
     }
 
@@ -91,14 +94,17 @@ public abstract class BaseService extends QueryService {
      * 
      * @param entity
      *            - Desired mapped entity object to save
-     * @return - Updated object with new ID (if new object)
+     * @return - Optional with updated object with new ID (if new object)
+     * @throws NullPointerException
+     *             if optional is null
      */
-    public <T extends BaseEntity> T save(T entity) {
+    public <T extends BaseEntity> Optional<T> save(T entity) {
+        EntityManager em = getEm();
         if (entity.getId() == null) {
-            getEm().persist(entity);
-            return entity;
+            em.persist(entity);
+            return Optional.of(entity);
         } else {
-            return getEm().merge(entity);
+            return Optional.of(em.merge(entity));
         }
     }
 
@@ -109,12 +115,13 @@ public abstract class BaseService extends QueryService {
      *            - Collection with items to save
      */
     public <T extends BaseEntity> void saveBatch(Collection<T> items) {
+        EntityManager em = getEm();
         for (Iterator<T> iterator = items.iterator(); iterator.hasNext();) {
             T t = (T) iterator.next();
             if (t.getId() == null) {
-                getEm().persist(t);
+                em.persist(t);
             } else {
-                getEm().merge(t);
+                em.merge(t);
             }
         }
     }
@@ -126,7 +133,9 @@ public abstract class BaseService extends QueryService {
      *            - Item desired to remove
      */
     public <T extends BaseEntity> void remove(T entity) {
-        getEm().remove(entity);
+        EntityManager em = getEm();
+        BaseEntity ref = em.getReference(entity.getClass(), entity.getId());
+        em.remove(ref);
     }
 
     /**
@@ -141,8 +150,9 @@ public abstract class BaseService extends QueryService {
      * @see PredicateClause
      * @see PredicateBuilder
      */
-    public <T> Boolean removeByParams(Class<T> entityClass, PredicateClause predicateClause) {
-        CriteriaBuilder cb = getEm().getCriteriaBuilder();
+    public <T> boolean removeByParams(Class<T> entityClass, PredicateClause predicateClause) {
+        EntityManager em = getEm();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaDelete<T> delete = cb.createCriteriaDelete(entityClass);
         Root<T> root = delete.from(entityClass);
         if (predicateClause != null) {
@@ -150,7 +160,7 @@ public abstract class BaseService extends QueryService {
             Predicate[] conditions = predicates.toArray(new Predicate[predicates.size()]);
             delete.where(conditions);
         }
-        Query query = getEm().createQuery(delete);
+        Query query = em.createQuery(delete);
         int rowCount = query.executeUpdate();
         if (rowCount > 0) {
             return true;
@@ -174,7 +184,8 @@ public abstract class BaseService extends QueryService {
      */
 
     public <T> boolean updateByParams(Class<T> entityClass, Map<String, Object> values, PredicateClause predicateClause) {
-        CriteriaBuilder cb = getEm().getCriteriaBuilder();
+        EntityManager em = getEm();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaUpdate<T> update = cb.createCriteriaUpdate(entityClass);
         Root<T> root = update.from(entityClass);
 
@@ -189,7 +200,7 @@ public abstract class BaseService extends QueryService {
         } else {
             LOGGER.debug("Be careful, you just entered on Isaac mode");
         }
-        Query query = getEm().createQuery(update);
+        Query query = em.createQuery(update);
         int rowCount = query.executeUpdate();
         if (rowCount > 0) {
             return true;
@@ -207,11 +218,12 @@ public abstract class BaseService extends QueryService {
      *            - Entity (table) to be searched.
      * @param id
      *            - value condition to seek
-     * @return - Object according to entityClass type
+     * @return - Object Encapsulated on {@link Optional} interface based on entityClass type
      * @author victor.bello
+     * @see Optional
      */
-    public <T extends BaseEntity> T findById(Class<T> entityClass, Object id) {
-        return getEm().find(entityClass, id);
+    public <T extends BaseEntity> Optional<T> findById(Class<T> entityClass, Object id) {
+        return Optional.ofNullable(getEm().find(entityClass, id));
     }
 
     /**
@@ -225,15 +237,16 @@ public abstract class BaseService extends QueryService {
      *            - Return ordem of the results. {@link QueryOrder#ASC} will return the result in ascending order. The {@link QueryOrder#DESC} will return the result in descending order.
      * @param columns
      *            - When {@link QueryOrder} is passed by argument, this argument becomes required. This parameter informs the columns which should ordered by
-     * @return - Returns the <b>FIRST</b> item found.
+     * @return - Returns the <b>FIRST</b> item found encapsulated on {@link Optional} interface based on entityClass type
      * @author victor.bello
      * @see PredicateClause
      * @see PredicateBuilder
      */
-    public <T extends BaseEntity> T findFirstOrderedByParams(Class<T> entityClass, PredicateClause predicateClause, QueryOrder order, String... columns) {
-        CriteriaQuery<T> cq = generateSelectQuery(entityClass, predicateClause, order, columns);
-        List<T> resultList = getEm().createQuery(cq).setFirstResult(0).setMaxResults(1).getResultList();
-        return resultList == null ? null : resultList.get(0);
+    public <T extends BaseEntity> Optional<T> findFirstOrderedByParams(Class<T> entityClass, PredicateClause predicateClause, QueryOrder order, String... columns) {
+        EntityManager em = getEm();
+        CriteriaQuery<T> cq = generateSelectQuery(em, entityClass, predicateClause, order, columns);
+        List<T> resultList = em.createQuery(cq).setFirstResult(0).setMaxResults(1).getResultList();
+        return resultList == null ? Optional.empty() : Optional.ofNullable(resultList.get(0));
     }
 
     /**
@@ -243,12 +256,12 @@ public abstract class BaseService extends QueryService {
      *            - Entity (table) to be searched.
      * @param predicateClause
      *            - Where condition to filter
-     * @return - Returns the <b>FIRST</b> item found.
+     * @return - Returns the <b>FIRST</b> item found encapsulated on {@link Optional} interface based on entityClass type
      * @author victor.bello
      * @see PredicateClause
      * @see PredicateBuilder
      */
-    public <T extends BaseEntity> T findFirstByParams(Class<T> entityClass, PredicateClause predicateClause) {
+    public <T extends BaseEntity> Optional<T> findFirstByParams(Class<T> entityClass, PredicateClause predicateClause) {
         return findFirstOrderedByParams(entityClass, predicateClause, null);
     }
 
@@ -261,11 +274,11 @@ public abstract class BaseService extends QueryService {
      *            - Return ordem of the results. {@link QueryOrder#ASC} will return the result in ascending order. The {@link QueryOrder#DESC} will return the result in descending order.
      * @param columns
      *            - When {@link QueryOrder} is passed by argument, this argument becomes required. This parameter informs the columns which should ordered by
-     * @return - Returns the <b>FIRST</b> item found.
+     * @return - Returns the <b>FIRST</b> item found encapsulated on {@link Optional} interface based on entityClass type
      * @author victor.bello
      * 
      */
-    public <T extends BaseEntity> T findFirstOrdered(Class<T> entityClass, QueryOrder order, String... columns) {
+    public <T extends BaseEntity> Optional<T> findFirstOrdered(Class<T> entityClass, QueryOrder order, String... columns) {
         return findFirstOrderedByParams(entityClass, null, order, columns);
     }
 
@@ -274,10 +287,10 @@ public abstract class BaseService extends QueryService {
      * 
      * @param entityClass
      *            - Entity (table) to be searched.
-     * @return - Returns the <b>FIRST</b> item found.
+     * @return - Returns the <b>FIRST</b> item found encapsulated on {@link Optional} interface based on entityClass type
      * @author victor.bello
      */
-    public <T extends BaseEntity> T findFirst(Class<T> entityClass) {
+    public <T extends BaseEntity> Optional<T> findFirst(Class<T> entityClass) {
         return findFirstOrderedByParams(entityClass, null, null);
     }
 
@@ -311,8 +324,9 @@ public abstract class BaseService extends QueryService {
      * @see Collections#emptyList()
      */
     public <T extends BaseEntity> List<T> findAllOrderedByParams(Class<T> entityClass, PredicateClause predicateClause, QueryOrder order, String... columns) {
-        CriteriaQuery<T> cq = generateSelectQuery(entityClass, predicateClause, order, columns);
-        List<T> resultList = getEm().createQuery(cq).getResultList();
+        EntityManager em = getEm();
+        CriteriaQuery<T> cq = generateSelectQuery(em, entityClass, predicateClause, order, columns);
+        List<T> resultList = em.createQuery(cq).getResultList();
         return resultList == null ? Collections.emptyList() : resultList;
     }
 
@@ -364,8 +378,8 @@ public abstract class BaseService extends QueryService {
         return unitUtil.isLoaded(entity);
     }
 
-    private <T extends BaseEntity> CriteriaQuery<T> generateSelectQuery(Class<T> entityClass, PredicateClause predicateClause, QueryOrder order, String... columns) {
-        CriteriaBuilder cb = getEm().getCriteriaBuilder();
+    private <T extends BaseEntity> CriteriaQuery<T> generateSelectQuery(EntityManager em, Class<T> entityClass, PredicateClause predicateClause, QueryOrder order, String... columns) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<T> cq = cb.createQuery(entityClass);
         Root<T> root = cq.from(entityClass);
 
@@ -421,11 +435,12 @@ public abstract class BaseService extends QueryService {
      */
     @SuppressWarnings("unchecked")
     protected <T extends BaseEntity> List<T> findByNativeQuery(String query, Class<T> clazz, Object... params) {
+        EntityManager em = getEm();
         Query tquery = null;
         if (clazz == null) {
-            tquery = getEm().createNativeQuery(query, clazz);
+            tquery = em.createNativeQuery(query, clazz);
         } else {
-            tquery = getEm().createNativeQuery(query, clazz);
+            tquery = em.createNativeQuery(query, clazz);
         }
         int idx = 1;
         for (Object param : params) {
@@ -442,7 +457,8 @@ public abstract class BaseService extends QueryService {
     }
 
     protected void removeByNativeQuery(String query, Object... params) {
-        Query tquery = getEm().createNativeQuery(query);
+        EntityManager em = getEm();
+        Query tquery = em.createNativeQuery(query);
         int idx = 1;
         for (Object param : params) {
             tquery.setParameter(idx, param);
@@ -452,7 +468,8 @@ public abstract class BaseService extends QueryService {
     }
 
     protected void updateByNativeQuery(String query, Object... params) {
-        Query tquery = getEm().createNativeQuery(query);
+        EntityManager em = getEm();
+        Query tquery = em.createNativeQuery(query);
         int idx = 1;
         for (Object param : params) {
             tquery.setParameter(idx, param);

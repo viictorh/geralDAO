@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.log4j.Logger;
 
@@ -35,7 +36,7 @@ public abstract class QueryService {
     protected abstract Connection connection();
 
     /**
-     * Executes a query or procedure and returns its result based on clazz parameter.
+     * Executes a query or procedure and returns its result encapsulated on {@link Optional} interface based on clazz parameter.
      * 
      * @param builder
      *            Class which extends {@link StatementBuilder}. This class is used to create statements and execute it accordingly.
@@ -46,12 +47,12 @@ public abstract class QueryService {
      * @author victor.bello
      * @see {@link QueryResultReader}
      */
-    public <T> T findItem(StatementBuilder builder, Class<T> clazz) throws SQLException {
-        return (T) findItem(builder, new QueryResultReader<T>(clazz));
+    public <T> Optional<T> findItem(StatementBuilder builder, Class<T> clazz) throws SQLException {
+        return findItem(builder, new QueryResultReader<T>(clazz));
     }
 
     /**
-     * Executes a query or procedure and returns its result based on {@code QueryResultReader}.
+     * Executes a query or procedure and returns its result encapsulated on {@link Optional} interface based on clazz parameter.
      * 
      * @param builder
      *            Class which extends {@link StatementBuilder}. This class is used to create statements and execute it accordingly.
@@ -62,9 +63,9 @@ public abstract class QueryService {
      * @author victor.bello
      * @see {@link QueryResultReader}
      */
-    public <T> T findItem(StatementBuilder builder, QueryResultReader<T> reader) throws SQLException {
+    public <T> Optional<T> findItem(StatementBuilder builder, QueryResultReader<T> reader) throws SQLException {
         Result<T> resultReturn = execute(builder, reader, ResultType.ITEM);
-        return resultReturn.obj;
+        return Optional.ofNullable(resultReturn.obj);
     }
 
     /**

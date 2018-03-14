@@ -9,8 +9,8 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import br.com.geraldao.query.StatementBuilder;
 import br.com.geraldao.query.QueryResultReader;
+import br.com.geraldao.query.StatementBuilder;
 
 /**
  * 

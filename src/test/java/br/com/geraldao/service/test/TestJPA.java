@@ -51,7 +51,7 @@ public class TestJPA {
         PredicateClause block = PredicateBuilder.where("login", Operator.ENDS_WITH, "r").andIsNull("oldPassword").build();
         PredicateClause build = PredicateBuilder.where("login", "victor").andIsNotNull("oldPassword").orBlock(block).build();
         Class<User> entityClass = User.class;
-        User users = service.findFirstOrderedByParams(entityClass, build, QueryOrder.DESC, "login");
+        User users = service.findFirstOrderedByParams(entityClass, build, QueryOrder.DESC, "login").get();
         System.out.println("Generated query: select <mapped columns> from TUnpbxUser where login = 'victor' and oldPassword is not null or (login like '%r' and oldPassword is null)");
         assertThat(users, CoreMatchers.instanceOf(entityClass));
         System.out.println(users);
