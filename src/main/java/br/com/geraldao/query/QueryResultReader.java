@@ -6,12 +6,15 @@ import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.Column;
 
 import br.com.geraldao.annotation.Ignore;
 import br.com.geraldao.exception.ANIMALTypeException;
+import br.com.geraldao.util.ListUtil;
 
 /**
  * Class responsible for reading {@link ResultSet} from executed Statement <br>
@@ -23,7 +26,7 @@ import br.com.geraldao.exception.ANIMALTypeException;
  * @author victor.bello
  *
  * @param <T>
- *            Class type result
+ *            Class type resultColumn
  */
 public class QueryResultReader<T> {
 
@@ -39,13 +42,18 @@ public class QueryResultReader<T> {
         /**
          * Java object wrapper or default classes as {@link Integer, Double, String, Date}, etc which will be found on resultSet by column position
          */
-        WRAPPER_BY_POSITION
+        WRAPPER_BY_POSITION,
+        /**
+         * Defines the result as an object array
+         */
+        ARRAY_RESULT
     }
 
     private DataType dataType;
     private Class<T> clazz;
     private String   parameterName;
     private Integer  position;
+    private List<?>  resultColumn;
 
     /**
      * Creates a QueryResultReader.<br>
@@ -101,6 +109,21 @@ public class QueryResultReader<T> {
         this.position = position;
     }
 
+    /**
+     * Creates a QueryResultReader.<br>
+     * Indicates that the result will be searched by name and/or position. The return will generate an array Object[].
+     * 
+     * @param resultColumn
+     *            - Name of the returned column on result set or position.
+     */
+    public QueryResultReader(List<?> resultColumn) {
+    	if(ListUtil.isCollectionEmpty(resultColumn)){
+    		throw new IllegalArgumentException("Invalid parameter. You must choose which columns should be read.");
+    	}
+        this.resultColumn = resultColumn;
+        this.dataType = DataType.ARRAY_RESULT;
+    }
+
     private boolean isComplexClass(Class<T> clazz) {
         if (clazz == null) {
             throw new IllegalArgumentException("Class should not be null. Check usage for the correct method");
@@ -125,34 +148,38 @@ public class QueryResultReader<T> {
                 return readByReflection(clazz, rs, parameterName);
             case WRAPPER_BY_POSITION:
                 return readByReflection(clazz, rs, position);
+            case ARRAY_RESULT:
+                return readByReflection(rs);
         }
         return null;
     }
 
-    /**
-     * 
-     * @param clazz
-     * @param rs
-     * @return
-     * @throws SQLException
-     * @author victor.bello
-     */
+    @SuppressWarnings("unchecked")
+    private T readByReflection(ResultSet rs) throws SQLException {
+        List<Object> columns = new ArrayList<>();
+        for (Object rsParam : resultColumn) {
+            columns.add(readResultSet(rs, rsParam));
+        }
+        return (T) columns.toArray();
+    }
+
     @SuppressWarnings("unchecked")
     private T readByReflection(Class<T> clazz, ResultSet rs, Object rsParam) throws SQLException {
+        return (T) convertTypes(readResultSet(rs, rsParam), clazz);
+    }
+
+    private Object readResultSet(ResultSet rs, Object rsParam) throws SQLException {
         if (rsParam instanceof String) {
             String param = (String) rsParam;
-            return (T) convertTypes(rs.getObject(param), clazz);
+            return rs.getObject(param);
         } else {
             Integer param = (Integer) rsParam;
-            return (T) convertTypes(rs.getObject(param), clazz);
+            return rs.getObject(param);
         }
     }
 
     /**
      * 
-     * @param clazz
-     * @param rs
-     * @return
      * @throws SQLException
      * @author victor.bello e yuri.campolongo
      */

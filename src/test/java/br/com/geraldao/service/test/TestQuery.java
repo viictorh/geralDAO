@@ -99,4 +99,29 @@ public class TestQuery {
         System.out.println(findItem);
     }
 
+    @Test
+    public void testMapFields() throws SQLException {
+        QueryResultReader<Object[]> queryResult = new QueryResultReader<Object[]>(Arrays.asList("Iduser", "login"));
+        Object[] findItem = service.findItem(QueryBuilder.create("SELECT * FROM TUNPBXUSER"), queryResult).get();
+        if (findItem[0] instanceof Integer) {
+            System.out.println("is integer");
+        }
+        System.out.println(findItem);
+    }
+
+    @Test
+    public void testMapFieldsList() throws SQLException {
+        QueryResultReader<Object[]> queryResult = new QueryResultReader<Object[]>(Arrays.asList("Iduser", "login", 2));
+        List<Object[]> findItem = service.findAll(QueryBuilder.create("SELECT * FROM TUNPBXUSER"), queryResult);
+        System.out.println(findItem);
+        for (Object[] objects : findItem) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < objects.length; i++) {
+                sb.append(objects[i]).append(" - ");
+            }
+            System.out.println("Object[]: " + sb.toString());
+        }
+
+    }
+
 }
