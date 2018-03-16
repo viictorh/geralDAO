@@ -1,7 +1,5 @@
 package br.com.geraldao.service.test;
 
-import static org.junit.Assert.assertTrue;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,48 +15,38 @@ import br.com.geraldao.bean.ProcedureDefaultResult;
 import br.com.geraldao.query.ProcedureBuilder;
 import br.com.geraldao.query.QueryBuilder;
 import br.com.geraldao.query.QueryResultReader;
-import br.com.geraldao.service.GenericService;
+import br.com.geraldao.service.GenericServiceQuery;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestQuery {
 
-    private GenericService service;
+    private GenericServiceQuery service;
 
     @Before
     public void setUp() {
-        service = new GenericService();
+        service = new GenericServiceQuery();
     }
 
     @Test
-    public void testAProcedureWithResult() throws SQLException {
-        List<Object> params = new ArrayList<>();
-        params.add(31);
-        params.add(true);
-        params.add(true);
-        ProcedureDefaultResult findItem = service.findItem(ProcedureBuilder.create("Sp_UnPbxCleanUserConnection", params), ProcedureDefaultResult.class);
+    public void testProcedureWithResult() throws SQLException {
+        List<Object> params = Arrays.asList(31, true, true);
+        ProcedureDefaultResult findItem = service.findItem(ProcedureBuilder.create("Sp_UnPbxCleanUserConnection", params), ProcedureDefaultResult.class).orElse(new ProcedureDefaultResult());
         System.out.println(findItem);
     }
 
     @Test
     public void testBProcedureSpecificResultPosition() throws SQLException {
-        List<Object> params = new ArrayList<>();
-        params.add(31);
-        params.add(true);
-        params.add(true);
+        List<Object> params = Arrays.asList(31, true, true);
         QueryResultReader<String> queryResult = new QueryResultReader<>(String.class, 1);
-        String findItem = service.findItem(ProcedureBuilder.create("Sp_UnPbxCleanUserConnection", params), queryResult);
-        assertTrue(findItem.equals("2"));
+        String findItem = service.findItem(ProcedureBuilder.create("Sp_UnPbxCleanUserConnection", params), queryResult).get();
         System.out.println(findItem);
     }
 
     @Test
     public void testCProcedureSpecificResultName() throws SQLException {
-        List<Object> params = new ArrayList<>();
-        params.add(31);
-        params.add(true);
-        params.add(true);
+        List<Object> params = Arrays.asList(31, true, true);
         QueryResultReader<String> queryResult = new QueryResultReader<>(String.class, "resultDescription");
-        String findItem = service.findItem(ProcedureBuilder.create("Sp_UnPbxCleanUserConnection", params), queryResult);
+        String findItem = service.findItem(ProcedureBuilder.create("Sp_UnPbxCleanUserConnection", params), queryResult).get();
         System.out.println(findItem);
     }
 
@@ -70,7 +58,7 @@ public class TestQuery {
         params.add(true);
         params.add(true);
         QueryResultReader<Integer> queryResult = new QueryResultReader<>(Integer.class);
-        Integer findItem = service.findItem(ProcedureBuilder.create("Sp_UnPbxCleanUserConnection", params), queryResult);
+        Integer findItem = service.findItem(ProcedureBuilder.create("Sp_UnPbxCleanUserConnection", params), queryResult).get();
         System.out.println(findItem);
     }
 
@@ -86,14 +74,14 @@ public class TestQuery {
     @Test
     public void testFQueryField() throws SQLException {
         QueryResultReader<Integer> queryResult = new QueryResultReader<>(Integer.class, 1);
-        Integer findItem = service.findItem(QueryBuilder.create("SELECT * FROM TUNPBXUSER WHERE IDUser = ?", Arrays.asList(31)), queryResult);
+        Integer findItem = service.findItem(QueryBuilder.create("SELECT * FROM TUNPBXUSER WHERE IDUser = ?", Arrays.asList(31)), queryResult).get();
         System.out.println(findItem);
     }
 
     @Test
     public void testGQueryFieldDateType() throws SQLException {
         QueryResultReader<Date> queryResult = new QueryResultReader<>(Date.class, "ENDOFLASTATTENDANCE");
-        Date findItem = service.findItem(QueryBuilder.create("SELECT * FROM TUNPBXUSER WHERE IDUser = ?", Arrays.asList(31)), queryResult);
+        Date findItem = service.findItem(QueryBuilder.create("SELECT * FROM TUNPBXUSER WHERE IDUser = ?", Arrays.asList(666)), queryResult).orElse(new Date());
         System.out.println(findItem);
     }
 
@@ -107,8 +95,33 @@ public class TestQuery {
     @Test
     public void testIQueryFieldDateType() throws SQLException {
         QueryResultReader<Integer> queryResult = new QueryResultReader<>(Integer.class, "IDUser");
-        Integer findItem = service.findItem(QueryBuilder.create("SELECT * FROM TUNPBXUSER"), queryResult);
+        Integer findItem = service.findItem(QueryBuilder.create("SELECT * FROM TUNPBXUSER"), queryResult).get();
         System.out.println(findItem);
+    }
+
+    @Test
+    public void testMapFields() throws SQLException {
+        QueryResultReader<Object[]> queryResult = new QueryResultReader<Object[]>(Arrays.asList("Iduser", "login"));
+        Object[] findItem = service.findItem(QueryBuilder.create("SELECT * FROM TUNPBXUSER"), queryResult).get();
+        if (findItem[0] instanceof Integer) {
+            System.out.println("is integer");
+        }
+        System.out.println(findItem);
+    }
+
+    @Test
+    public void testMapFieldsList() throws SQLException {
+        QueryResultReader<Object[]> queryResult = new QueryResultReader<Object[]>(Arrays.asList("Iduser", "login", 2));
+        List<Object[]> findItem = service.findAll(QueryBuilder.create("SELECT * FROM TUNPBXUSER"), queryResult);
+        System.out.println(findItem);
+        for (Object[] objects : findItem) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < objects.length; i++) {
+                sb.append(objects[i]).append(" - ");
+            }
+            System.out.println("Object[]: " + sb.toString());
+        }
+
     }
 
 }
