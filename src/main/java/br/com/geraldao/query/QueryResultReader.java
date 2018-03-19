@@ -186,7 +186,7 @@ public class QueryResultReader<T> {
     @SuppressWarnings("unchecked")
     private T readByReflection(Class<T> clazz, ResultSet rs) throws SQLException {
         try {
-            T obj = (T) Class.forName(clazz.getName()).newInstance();
+            T obj = (T) Class.forName(clazz.getName(), false, clazz.getClassLoader()).newInstance();
             Method[] methods = clazz.getMethods();
             for (Method method : methods) {
                 Annotation annotation = method.getAnnotation(Column.class);
