@@ -246,7 +246,7 @@ public abstract class BaseService extends QueryService {
         EntityManager em = getEm();
         CriteriaQuery<T> cq = generateSelectQuery(em, entityClass, predicateClause, order, columns);
         List<T> resultList = em.createQuery(cq).setFirstResult(0).setMaxResults(1).getResultList();
-        return resultList == null ? Optional.empty() : Optional.ofNullable(resultList.get(0));
+        return resultList == null || resultList.isEmpty() ? Optional.empty() : Optional.ofNullable(resultList.get(0));
     }
 
     /**
