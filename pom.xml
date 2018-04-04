@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>br.com</groupId>
 	<artifactId>geralDAO</artifactId>
-	<version>1.0.1</version>
+	<version>1.0.2</version>
 	<name>geralDAO</name>
 	<packaging>jar</packaging>
 	<description>Auxiliar na utilização do banco de dados. Seja na execução de procedures ou utilizando JPA</description>
